@@ -10,7 +10,7 @@ today = datetime.today().strftime('%Y-%m-%d')
 
 def get_tables_from_variables(key):
     tables = Variable.get(key=key, deserialize_json=True)
-    return tables['dshop']
+    return tables['dshop_bu']
 
 
 default_args = {
@@ -31,12 +31,25 @@ dag = DAG(
 
 for table in get_tables_from_variables('tables'):
     get_data_to_bronze = PythonOperator(
-        task_id=f'get_{table}_from_dshop',
+        task_id=f'get_{table}_from_postgres',
         python_callable=get_table_data_for_file,
         op_kwargs={
-            'connection_id': 'dshop',
+            'connection_id': 'dshop_bu',
             'table': table,
             'current_date': today
         },
         dag=dag
     )
+
+    transform_data_to_silver = PythonOperator(
+        task_id=f'push_{table}_to_silver',
+        python_callable=bronze_to_silver,
+        op_kwargs={
+            'connection_id': 'dshop_bu',
+            'table': table,
+            'current_date': today
+        },
+        dag=dag
+    )
+
+    get_data_to_bronze >> transform_data_to_silver

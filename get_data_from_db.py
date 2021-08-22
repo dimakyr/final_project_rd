@@ -47,7 +47,7 @@ def bronze_to_silver(**kwargs):
     try:
         table_name = kwargs['table']
         today = kwargs['current_date']
-        spark = SparkSession.builder.master('local').appName('hw_14').getOrCreate()
+        spark = SparkSession.builder.master('local').appName('final').getOrCreate()
 
         table_data_df = spark.read.load(os.path.join('bronze', today, kwargs['connection_id'], f'{table_name}.csv'),
                                         header="true",
