@@ -21,8 +21,8 @@ default_args = {
 }
 
 dag = DAG(
-    dag_id='hw_14_postgres',
-    description='Home work for lesson 14',
+    dag_id='final_project_postgres',
+    description='Final project',
     schedule_interval='@daily',
     start_date=datetime(2021, 8, 10, 23),
     default_args=default_args
