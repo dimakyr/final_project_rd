@@ -1,6 +1,7 @@
 from datetime import datetime
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
+from airflow.operators.dummy_operator import DummyOperator
 from airflow.models import Variable
 from get_data_from_db import get_table_data_for_file, bronze_to_silver
 
@@ -28,9 +29,11 @@ dag = DAG(
     default_args=default_args
 )
 
+get_data_to_bronze = []
+transform_data_to_silver = []
 
 for table in get_tables_from_variables('tables'):
-    get_data_to_bronze = PythonOperator(
+    get_data_to_bronze.append(PythonOperator(
         task_id=f'get_{table}_from_postgres',
         python_callable=get_table_data_for_file,
         op_kwargs={
@@ -39,9 +42,9 @@ for table in get_tables_from_variables('tables'):
             'current_date': today
         },
         dag=dag
-    )
+    ))
 
-    transform_data_to_silver = PythonOperator(
+    transform_data_to_silver.append(PythonOperator(
         task_id=f'push_{table}_to_silver',
         python_callable=bronze_to_silver,
         op_kwargs={
@@ -50,6 +53,9 @@ for table in get_tables_from_variables('tables'):
             'current_date': today
         },
         dag=dag
-    )
+    ))
 
-    get_data_to_bronze >> transform_data_to_silver
+dummy_task1 = DummyOperator(task_id='dummy_task1', dag=dag)
+dummy_task2 = DummyOperator(task_id='dummy_task2', dag=dag)
+
+dummy_task1 >> get_data_to_bronze >> dummy_task2 >> transform_data_to_silver
