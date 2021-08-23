@@ -47,7 +47,7 @@ def write_data_to_bronze(**kwargs):
         json.dump(data[today], f)
 
 
-def bronze_to_silver(**kwargs):
+def bronze_to_silver_from_api(**kwargs):
     try:
         today = kwargs['current_date']
         spark = SparkSession.builder.master('local').appName('hw_14').getOrCreate()
