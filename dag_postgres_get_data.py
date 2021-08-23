@@ -23,7 +23,7 @@ default_args = {
 }
 
 dag = DAG(
-    dag_id='final_project_postgres',
+    dag_id='final_project_get_data',
     description='Final project',
     schedule_interval='@daily',
     start_date=datetime(2021, 8, 10, 23),
@@ -73,6 +73,7 @@ for table in get_tables_from_variables('tables'):
 
 dummy_task1 = DummyOperator(task_id='dummy_task1', dag=dag)
 dummy_task2 = DummyOperator(task_id='dummy_task2', dag=dag)
+dummy_finish = DummyOperator(task_id='dummy_finish', dag=dag)
 
 get_data_to_bronze_from_api >> transform_data_to_silver_from_api >>\
-dummy_task1 >> get_data_to_bronze >> dummy_task2 >> transform_data_to_silver
+dummy_task1 >> get_data_to_bronze >> dummy_task2 >> transform_data_to_silver >> dummy_finish
