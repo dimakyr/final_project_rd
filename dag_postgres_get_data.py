@@ -5,6 +5,7 @@ from airflow.operators.dummy_operator import DummyOperator
 from airflow.models import Variable
 from get_data_from_db import get_table_data_for_file, bronze_to_silver
 from get_data_from_api import write_data_to_bronze, bronze_to_silver_from_api
+from transform_data_to_gold import process_to_gold
 
 
 today = datetime.today().strftime('%Y-%m-%d')
@@ -23,10 +24,10 @@ default_args = {
 }
 
 dag = DAG(
-    dag_id='final_project_get_data',
+    dag_id='final_project',
     description='Final project',
     schedule_interval='@daily',
-    start_date=datetime(2021, 8, 10, 23),
+    start_date=datetime(2021, 8, 23, 23),
     default_args=default_args
 )
 
@@ -71,9 +72,19 @@ for table in get_tables_from_variables('tables'):
         dag=dag
     ))
 
+transfer_data_to_gold = PythonOperator(
+        task_id=f'push_data_to_gold',
+        python_callable=process_to_gold,
+        op_kwargs={
+            'connection_id': 'greenplum',
+            'current_date': today
+        },
+        dag=dag
+    )
+
 dummy_task1 = DummyOperator(task_id='dummy_task1', dag=dag)
 dummy_task2 = DummyOperator(task_id='dummy_task2', dag=dag)
-dummy_finish = DummyOperator(task_id='dummy_finish', dag=dag)
 
-get_data_to_bronze_from_api >> transform_data_to_silver_from_api >>\
-dummy_task1 >> get_data_to_bronze >> dummy_task2 >> transform_data_to_silver >> dummy_finish
+
+get_data_to_bronze_from_api >> transform_data_to_silver_from_api >> dummy_task1 >>\
+get_data_to_bronze >> dummy_task2 >> transform_data_to_silver >> transfer_data_to_gold
